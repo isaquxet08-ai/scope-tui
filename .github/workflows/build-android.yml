@@ -18,11 +18,16 @@ jobs:
       - name: Install cargo-ndk
         run: cargo install cargo-ndk
 
+      - name: Patch source to bypass audio dependencies
+        run: |
+          # 强行阉割掉依赖 cpal 的 Picker 初始化代码
+          sed -i 's/let mut picker = scope::picker::Picker::new(.*);/unimplemented!();/' src/main.rs
+          
       - name: Build with cargo-ndk
         run: |
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
-          # 核心修改：禁用默认特性（避开 cpal/oboe），只启用 file
-          cargo ndk -t arm64-v8a -o ./output build --release
+          # 核心修复：加上 --platform 26 解决找不到 -laaudio 的问题
+          cargo ndk -t arm64-v8a --platform 26 -o ./output build --release --no-default-features --features "app,file"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
