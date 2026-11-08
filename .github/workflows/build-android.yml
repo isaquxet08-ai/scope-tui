@@ -1,0 +1,31 @@
+name: Build for Termux (Android aarch64)
+
+on:
+  push:
+    branches: [ "main", "master", "dev" ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust target
+        run: rustup target add aarch64-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
+      - name: Build with cargo-ndk
+        run: |
+          export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
+          # 核心修改：禁用默认特性（避开 cpal/oboe），只启用 file
+          cargo ndk -t arm64-v8a -o ./output build --release --no-default-features --features file
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scope-tui-android
+          path: ./output/arm64-v8a/scope-tui
