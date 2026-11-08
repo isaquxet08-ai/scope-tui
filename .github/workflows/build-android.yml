@@ -22,7 +22,7 @@ jobs:
         run: |
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
           # 核心修改：禁用默认特性（避开 cpal/oboe），只启用 file
-          cargo ndk -t arm64-v8a -o ./output build --release --no-default-features --features "app,file"
+          cargo ndk -t arm64-v8a -o ./output build --release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
