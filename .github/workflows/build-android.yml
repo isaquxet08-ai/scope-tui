@@ -20,13 +20,15 @@ jobs:
 
       - name: Patch source to bypass audio dependencies
         run: |
-          # 强行阉割掉依赖 cpal 的 Picker 初始化代码
-          sed -i 's/let mut picker = scope::picker::Picker::new(.*);/unimplemented!();/' src/main.rs
+          # 1. 将 Picker 的初始化替换为空元组，防止变量未定义
+          sed -i 's/let mut picker = scope::picker::Picker::new(.*);/let mut picker = ();/' src/main.rs
+          # 2. 将调用 picker 的地方替换为空操作，防止找不到方法
+          sed -i 's/args.device = picker.run(term);/let _ = picker;/' src/main.rs
           
       - name: Build with cargo-ndk
         run: |
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
-          # 核心修复：加上 --platform 26 解决找不到 -laaudio 的问题
+          # 禁用默认特性，只启用 app 和 file，并指定 API 26
           cargo ndk -t arm64-v8a --platform 26 -o ./output build --release --no-default-features --features "app,file"
 
       - name: Upload Artifact
