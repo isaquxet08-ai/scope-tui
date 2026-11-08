@@ -18,21 +18,20 @@ jobs:
       - name: Install cargo-ndk
         run: cargo install cargo-ndk
 
-      - name: Patch source to bypass audio dependencies
+      - name: Patch source to bypass audio and fix stdin issue
         run: |
-          # 强行阉割掉依赖 cpal 的 Picker 初始化代码
           sed -i 's/let mut picker = scope::picker::Picker::new(.*);/let mut picker = ();/' src/main.rs
           sed -i 's/args.device = picker.run(term);/let _ = picker;/' src/main.rs
+          sed -i 's|std::fs::File::open("/dev/stdin")|std::fs::File::open("geometries.raw")|g' src/input/file.rs
+          sed -i 's|stdin()|std::fs::File::open("geometries.raw").unwrap()|g' src/input/file.rs
           
       - name: Build with cargo-ndk
         run: |
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
-          # 去掉 -o ./output 参数，让它老老实实编译
           cargo ndk -t arm64-v8a --platform 26 build --release --no-default-features --features "app,file"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: scope-tui-android
-          # 核心修改：直接从 target 目录里把编译好的可执行文件拿走
           path: target/aarch64-linux-android/release/scope-tui
